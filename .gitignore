@@ -3,7 +3,6 @@ node_modules
 .env
 
 /generated/prisma
-/node_modules
 /auth
 contact.json
 contact_test.json
