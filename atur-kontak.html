@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Kontak - UPTPPD Pacitan</title>
+        <link rel="stylesheet" href="./output.css" />
+    </head>
+    <body>
+        <div class="w-full grid grid-cols-12 h-screen bg-primary gap-4 p-4 text-text font-ubuntu overflow-hidden items-start">
+            
+            <div class="col-span-2 flex flex-col h-full gap-4 max-h-full self-start">
+                <div class="w-full flex flex-col gap-4 pb-8">
+                    <span class="text-xl font-bold pb-2 border-b border-secondary">
+                        Navigasi
+                    </span>
+
+                    <button onclick="goBack()" class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition">
+                        ⬅ Kembali ke Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-span-10 flex flex-col h-full overflow-hidden">
+                <div class="flex w-full h-fit flex-col pb-4">
+                    <span class="font-bold text-3xl">Manajemen Kontak</span>
+                    <span>Tambah, edit, atau hapus daftar kontak tujuan WhatsApp</span>
+                </div>
+
+                <div class="grid grid-cols-12 border-s border-t border-secondary h-full">
+                    
+                    <div class="col-span-5 p-4 flex flex-col gap-4 border-e border-secondary">
+                        <span class="text-lg font-bold" id="formTitle">Tambah Kontak</span>
+
+                        <input
+                            id="contactName"
+                            type="text"
+                            placeholder="Nama Lengkap (contoh: MAHARANI WURYANTORO)"
+                            class="border border-secondary rounded-md px-3 py-2 bg-transparent focus:outline-none focus:border-accent uppercase"
+                        />
+
+                        <input
+                            id="contactNumber"
+                            type="number"
+                            placeholder="Nomor Telepon (contoh: 081234567890)"
+                            class="border border-secondary rounded-md px-3 py-2 bg-transparent focus:outline-none focus:border-accent"
+                        />
+
+                        <select 
+                            id="contactSapaan" 
+                            class="border border-secondary rounded-md px-3 py-2 bg-transparent focus:outline-none focus:border-accent [&>option]:bg-primary [&>option]:text-text"
+                        >
+                            <option value="Bapak">Bapak</option>
+                            <option value="Ibu">Ibu</option>
+                        </select>
+
+                        <div class="flex gap-2 mt-2">
+                            <button
+                                id="saveContact"
+                                class="flex-1 py-3 bg-accent rounded-md cursor-pointer hover:opacity-90 transition"
+                            >
+                                Simpan Kontak
+                            </button>
+                            <button
+                                id="cancelEdit"
+                                onclick="resetForm()"
+                                class="hidden py-3 px-4 bg-red-500 text-white rounded-md cursor-pointer hover:opacity-90 transition"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-span-7 flex flex-col h-full">
+                        <span class="text-xl font-bold py-2 px-4 border-b border-secondary w-full">
+                            Daftar Kontak
+                        </span>
+
+                        <div class="overflow-auto p-4">
+                            <table class="w-full text-sm">
+                                <thead class="bg-secondary">
+                                    <tr>
+                                        <th class="p-2 text-left">Nama</th>
+                                        <th class="p-2 text-left">Nomor Telepon</th>
+                                        <th class="p-2 text-left">Sapaan</th>
+                                        <th class="p-2 text-center w-32">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contactTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let contacts = {}; 
+            let editingKey = null;
+
+            const table = document.getElementById('contactTable');
+            const nameInput = document.getElementById('contactName');
+            const numberInput = document.getElementById('contactNumber');
+            const sapaanInput = document.getElementById('contactSapaan');
+            const btnSave = document.getElementById('saveContact');
+            const btnCancel = document.getElementById('cancelEdit');
+            const formTitle = document.getElementById('formTitle');
+
+            function render() {
+                table.innerHTML = '';
+
+                Object.keys(contacts).forEach(name => {
+                    const data = contacts[name];
+                    const tr = document.createElement('tr');
+
+                    tr.innerHTML = `
+                        <td class="p-2 font-bold">${name}</td>
+                        <td class="p-2">${data.number}</td>
+                        <td class="p-2">${data.sapaan}</td>
+                        <td class="p-2 text-center flex justify-center gap-3">
+                            <button onclick="editContact('${name}')" class="text-blue-400 hover:text-blue-300">Edit</button>
+                            <button onclick="deleteContact('${name}')" class="text-red-400 hover:text-red-300">Hapus</button>
+                        </td>
+                    `;
+                    table.appendChild(tr);
+                });
+            }
+
+            function resetForm() {
+                editingKey = null;
+                nameInput.value = '';
+                numberInput.value = '';
+                sapaanInput.value = 'Bapak';
+                
+                formTitle.innerText = 'Tambah Kontak';
+                btnSave.innerText = 'Simpan Kontak';
+                btnCancel.classList.add('hidden');
+            }
+
+            function editContact(name) {
+                const data = contacts[name];
+                if(!data) return;
+
+                editingKey = name;
+                nameInput.value = name;
+                numberInput.value = data.number;
+                sapaanInput.value = data.sapaan;
+
+                formTitle.innerText = 'Edit Kontak';
+                btnSave.innerText = 'Perbarui Kontak';
+                btnCancel.classList.remove('hidden');
+            }
+
+            function deleteContact(name) {
+                if(confirm(`Apakah Anda yakin ingin menghapus kontak ${name}?`)) {
+                    delete contacts[name];
+                    
+                    if(editingKey === name) resetForm(); 
+                    
+                    save();
+                    render();
+                }
+            }
+
+            async function save() {
+                await window.api.saveContacts(contacts);
+            }
+
+            document.getElementById('saveContact').addEventListener('click', async () => {
+                const name = nameInput.value.trim().toUpperCase();
+                const number = numberInput.value.trim();
+                const sapaan = sapaanInput.value;
+
+                if (!name || !number) {
+                    alert('Nama dan Nomor Telepon harus diisi!');
+                    return;
+                }
+
+                if (editingKey && editingKey !== name) {
+                    delete contacts[editingKey];
+                }
+
+                contacts[name] = {
+                    number: number,
+                    sapaan: sapaan
+                };
+
+                await save();
+                render();
+                resetForm();
+            });
+
+            async function load() {
+                const data = await window.api.getContacts();
+                contacts = data || {};
+                render();
+            }
+
+            function goBack() {
+                window.api.navigate('index.html');
+            }
+
+            load();
+        </script>
+    </body>
+</html>

@@ -239,5 +239,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 		api.navigate('variable.html');
 	};
 
+	window.goToAturKontak = function () {
+		api.navigate('atur-kontak.html');
+	};
 	await init();
 });
