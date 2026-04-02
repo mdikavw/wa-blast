@@ -7,6 +7,7 @@ const fs = require('fs');
 let win;
 let sock;
 let connected;
+const contactPath = path.join(__dirname, 'contact.json');
 const contacts = JSON.parse(
 	fs.readFileSync(path.join(__dirname, 'contact.json')),
 );
@@ -24,11 +25,9 @@ function getToday() {
 }
 
 function getContacts() {
-	const file = path.join(__dirname, 'contact.json');
+	if (!fs.existsSync(contactPath)) return {};
 
-	if (!fs.existsSync(file)) return {};
-
-	return JSON.parse(fs.readFileSync(file));
+	return JSON.parse(fs.readFileSync(contactPath));
 }
 
 function normalizeNumber(num) {
@@ -476,6 +475,26 @@ ipcMain.handle('message', async (_, payload) => {
 	await sock.sendPresenceUpdate('paused', jid);
 
 	return true;
+});
+
+ipcMain.handle('get-contacts', async () => {
+    try {
+		const contacts = getContacts();
+        return contacts;
+    } catch (error) {
+        console.error('Gagal membaca kontak:', error);
+        return {};
+    }
+});
+
+ipcMain.handle('save-contacts', async (event, data) => {
+    try {
+        fs.writeFileSync(contactPath, JSON.stringify(data, null, 4));
+        return true;
+    } catch (error) {
+        console.error('Gagal menyimpan kontak:', error);
+        return false;
+    }
 });
 
 app.whenReady().then(() => {

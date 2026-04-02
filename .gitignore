@@ -3,7 +3,9 @@ node_modules
 .env
 
 /generated/prisma
-/auth
+auth
 contact.json
 contact_test.json
 wa-logs.txt
+data/batches
+data/status
