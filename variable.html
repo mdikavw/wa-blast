@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Variabel - UPTPPD Pacitan</title>
+		<link rel="stylesheet" href="./output.css" />
+	</head>
+	<body>
+		<div
+			class="w-full grid grid-cols-12 h-screen bg-primary gap-4 p-4 text-text font-ubuntu overflow-hidden items-start"
+		>
+			<!-- SIDEBAR -->
+			<div
+				class="col-span-2 flex flex-col h-full gap-4 max-h-full self-start"
+			>
+				<div class="w-full flex flex-col gap-4 pb-8">
+					<span
+						class="text-xl font-bold pb-2 border-b border-secondary"
+					>
+						Navigasi
+					</span>
+
+					<button
+						onclick="goBack()"
+						class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition"
+					>
+						⬅ Kembali ke Dashboard
+					</button>
+				</div>
+			</div>
+
+			<!-- CONTENT -->
+			<div class="col-span-10 flex flex-col h-full overflow-hidden">
+				<div class="flex w-full h-fit flex-col pb-4">
+					<span class="font-bold text-3xl">Manajemen Variabel</span>
+					<span>Digunakan untuk template pesan WhatsApp</span>
+				</div>
+
+				<div
+					class="grid grid-cols-12 border-s border-t border-secondary h-full"
+				>
+					<!-- FORM -->
+					<div
+						class="col-span-5 p-4 flex flex-col gap-4 border-e border-secondary"
+					>
+						<span class="text-lg font-bold">Tambah Variabel</span>
+
+						<input
+							id="varName"
+							type="text"
+							placeholder="Nama variabel (contoh: nama)"
+							class="border border-secondary rounded-md px-3 py-2 bg-transparent"
+						/>
+
+						<button
+							id="saveVar"
+							class="py-3 bg-accent rounded-md cursor-pointer hover:opacity-90"
+						>
+							Simpan Variabel
+						</button>
+					</div>
+
+					<!-- LIST -->
+					<div class="col-span-7 flex flex-col h-full">
+						<span
+							class="text-xl font-bold py-2 px-4 border-b border-secondary w-full"
+						>
+							Daftar Variabel
+						</span>
+
+						<div class="overflow-auto p-4">
+							<table class="w-full text-sm">
+								<thead class="bg-secondary">
+									<tr>
+										<th class="p-2 text-left">Variabel</th>
+										<th class="p-2 text-left">Nilai</th>
+										<th class="p-2 text-center">Aksi</th>
+									</tr>
+								</thead>
+								<tbody id="varTable"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			let variables = [];
+
+			const table = document.getElementById('varTable');
+
+			function render() {
+				table.innerHTML = '';
+
+				variables.forEach(key => {
+					const tr = document.createElement('tr');
+
+					tr.innerHTML = `
+      <td class="p-2">{${key}}</td>
+      <td class="p-2 text-center">
+        <button onclick="deleteVar('${key}')" class="text-red-400">Hapus</button>
+      </td>
+    `;
+
+					table.appendChild(tr);
+				});
+			}
+
+			function deleteVar(key) {
+				variables = variables.filter(v => v !== key);
+				save();
+				render();
+			}
+
+			async function save() {
+				await window.api.saveVariables(variables);
+			}
+
+			document
+				.getElementById('saveVar')
+				.addEventListener('click', async () => {
+					const name = document
+						.getElementById('varName')
+						.value.trim();
+
+					if (!name) return;
+
+					if (!variables.includes(name)) {
+						variables.push(name);
+					}
+
+					await save();
+					render();
+
+					document.getElementById('varName').value = '';
+				});
+
+			async function load() {
+				variables = await window.api.getVariables();
+				render();
+			}
+
+			function goBack() {
+				api.navigate('index.html');
+			}
+
+			load();
+		</script>
+	</body>
+</html>
