@@ -181,10 +181,32 @@ window.addEventListener('DOMContentLoaded', async () => {
 	// 	const saved = await api.saveStatus(data);
 	// 	updateTable(saved);
 	// });
-
+	const timeInput = document.getElementById('schedule-time');
+    const saveTimeBtn = document.getElementById('save-time');
+	const activeTime = await api.getScheduleTime();
 	const messageInput = document.getElementById('message-template');
 	const saveMessageBtn = document.getElementById('save-message');
 
+	if (activeTime) {
+        timeInput.value = activeTime;
+    }
+
+    // Aksi saat tombol simpan ditekan
+    saveTimeBtn.addEventListener('click', async () => {
+        const selectedTime = timeInput.value;
+        
+        if (!selectedTime) {
+            addLog('Gagal: Silakan atur jam terlebih dahulu.');
+            return;
+        }
+
+        try {
+            await api.setScheduleTime(selectedTime);
+            addLog(`Jam pengiriman berhasil diatur ke: ${selectedTime}`);
+        } catch (err) {
+            addLog(`Gagal mengatur jam: ${err.message}`);
+        }
+    });
 	// load saat awal
 	if (variables?.message) {
 		messageInput.value = variables.message;
