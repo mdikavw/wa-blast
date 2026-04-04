@@ -30,4 +30,6 @@ contextBridge.exposeInMainWorld('api', {
     saveBatch: csv => ipcRenderer.invoke('save-batch', csv),
     getBatch: () => ipcRenderer.invoke('get-batch'),
     startScheduler: () => ipcRenderer.invoke('start-scheduler'),
+    setScheduleTime: time => ipcRenderer.invoke('set-schedule-time', time),
+    getScheduleTime: () => ipcRenderer.invoke('get-schedule-time'),
 });

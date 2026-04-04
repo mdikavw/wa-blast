@@ -13,8 +13,10 @@ const contacts = JSON.parse(
 );
 let statusData = [];
 let schedulerTimer = null;
+let currentScheduleTime = '14:20';
 
 const batchDir = path.join(__dirname, 'data', 'status');
+const variablesPath = path.join(__dirname, 'data', 'variables.json');
 
 if (!fs.existsSync(batchDir)) {
 	fs.mkdirSync(batchDir, { recursive: true });
@@ -217,24 +219,27 @@ function loadStatus() {
 	statusData = JSON.parse(fs.readFileSync(file));
 }
 
+
 ipcMain.handle('start-scheduler', () => {
-	console.log('Start scheduler dari batch');
+    console.log('Start scheduler dari batch');
 
-	loadStatus();
+    loadStatus();
 
-	// 🔥 kalau belum ada status → generate dari batch
-	if (!statusData.length) {
-		generateSchedule();
-	}
+    // 🔥 kalau belum ada status → generate dari batch menggunakan jam dari frontend
+    if (!statusData.length) {
+        // Kita masukkan currentScheduleTime ke sini
+        generateSchedule(currentScheduleTime); 
+    }
 
-	reassignMissedSchedules();
-	sendStatusUpdate();
-	scheduleNext();
+    reassignMissedSchedules();
+    sendStatusUpdate();
+    scheduleNext();
 
-	return statusData;
+    return statusData;
 });
 
-function generateSchedule(startTime = '14:04') {
+function generateSchedule(startTime = currentScheduleTime) {
+	console.log(`Membuat jadwal mulai pukul: ${startTime}`);
 	const batch = getTodayBatch(); // ❌ jangan difilter di sini
 	const dynamicCols = getDynamicCols();
 	const [hour, minute] = startTime.split(':').map(Number);
@@ -461,7 +466,14 @@ ipcMain.on('navigate', (event, page) => {
 		win.loadFile(path.join(__dirname, page));
 	}
 });
-const variablesPath = path.join(__dirname, 'data', 'variables.json');
+
+
+if (fs.existsSync(variablesPath)) {
+    const vars = JSON.parse(fs.readFileSync(variablesPath));
+    if (vars.scheduleTime) {
+        currentScheduleTime = vars.scheduleTime;
+    }
+}
 
 ipcMain.handle('get-variables', () => {
 	if (!fs.existsSync(variablesPath)) return {};
@@ -470,6 +482,25 @@ ipcMain.handle('get-variables', () => {
 
 ipcMain.handle('save-variables', (_, data) => {
 	fs.writeFileSync(variablesPath, JSON.stringify(data, null, 2));
+});
+
+ipcMain.handle('get-schedule-time', () => {
+    return currentScheduleTime;
+});
+
+ipcMain.handle('set-schedule-time', (_, newTime) => {
+    currentScheduleTime = newTime;
+
+    let currentVars = {};
+    if (fs.existsSync(variablesPath)) {
+        currentVars = JSON.parse(fs.readFileSync(variablesPath));
+    }
+
+    currentVars.scheduleTime = newTime;
+
+    fs.writeFileSync(variablesPath, JSON.stringify(currentVars, null, 2));
+
+    return true;
 });
 
 function createWindow() {
