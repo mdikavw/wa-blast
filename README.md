@@ -45,7 +45,9 @@ Aplikasi ini bekerja dengan 3 komponen utama:
 - Masukkan template pada kolom pesan di aplikasi
 
 Contoh:
-Selamat siang {sapaan}, {nama} memiliki {data} yang bisa digunakan
+```Selamat siang {sapaan}, {nama} memiliki {data} yang bisa digunakan```
+
+Variabel di kolom CSV akan otomatis menggantikan placeholder {data} di dalam template pesan.
 
 ---
 
@@ -74,13 +76,13 @@ Sistem akan:
 
 ### 5. Monitoring
 
-Status pengiriman:
+Setiap pesan memiliki status untuk memantau proses pengiriman:
 
-- `menunggu`
-- `mengirim`
-- `terkirim`
-- `gagal`
-- `skip`
+- `menunggu` → Data sudah masuk antrian, belum dikirim
+- `mengirim` → Pesan sedang dalam proses pengiriman
+- `terkirim` → Pesan berhasil dikirim
+- `gagal` → Pesan gagal dikirim (biasanya karena nomor tidak valid atau koneksi)
+- `skip` → Data dilewati (misalnya tidak memenuhi kondisi atau kosong)
 
 ---
 
@@ -226,3 +228,6 @@ AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMA
 Aplikasi ini dibuat untuk membantu otomatisasi pekerjaan administratif agar lebih efisien, dengan tetap memperhatikan etika penggunaan teknologi komunikasi.
 
 Gunakan dengan bijak.
+
+
+Developed with passion by CaveLabs 
