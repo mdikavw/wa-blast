@@ -84,3 +84,72 @@ Status pengiriman:
 
 ---
 
+## 🔧 Instalasi (Development)
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/username/whatsapp-reminder.git
+cd whatsapp-reminder
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Jalankan Aplikasi
+```bash
+npm start
+```
+
+---
+
+## 📦 Build Menjadi File `.exe`
+
+Aplikasi ini dapat di-*package* menjadi file `.exe` agar bisa digunakan tanpa perlu install Node.js.
+
+### 1. Install electron-builder
+```bash
+npm install --save-dev electron-builder
+```
+
+### 2. Tambahkan Config di `package.json`
+```json
+{
+  "build": {
+    "appId": "com.whatsapp.reminder",
+    "productName": "WhatsApp Reminder",
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
+```
+
+### 3. Build Aplikasi
+```bash
+npm run build
+```
+
+atau:
+
+```bash
+npx electron-builder
+```
+
+### 4. Hasil Build
+
+File `.exe` akan tersedia di folder:
+
+```
+dist/
+```
+
+### 5. Cara Menjalankan
+
+- Buka file `.exe`
+- Scan QR WhatsApp
+- Aplikasi siap digunakan
