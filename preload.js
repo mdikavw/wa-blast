@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('api', {
     onStatus: callback =>
         ipcRenderer.on('status', (_, status) => callback(status)),
     toggleConnection: () => ipcRenderer.send('toggle-connection'),
+    logoutWhatsApp: () => ipcRenderer.send('logout-whatsapp'),
     onButtonUpdate: callback =>
         ipcRenderer.on('update-button', (_, data) => callback(data)),
     parseXLSX: buffer => ipcRenderer.invoke('parse-xlsx', buffer),
