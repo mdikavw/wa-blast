@@ -13,6 +13,7 @@ const contacts = JSON.parse(
 );
 let statusData = [];
 let schedulerTimer = null;
+let currentScheduleTime = '14:20';
 
 const batchDir = path.join(__dirname, 'data', 'status');
 
@@ -187,24 +188,34 @@ function loadStatus() {
 	statusData = JSON.parse(fs.readFileSync(file));
 }
 
-ipcMain.handle('start-scheduler', () => {
-	console.log('Start scheduler dari batch');
-
-	loadStatus();
-
-	// 🔥 kalau belum ada status → generate dari batch
-	if (!statusData.length) {
-		generateSchedule();
-	}
-
-	reassignMissedSchedules();
-	sendStatusUpdate();
-	scheduleNext();
-
-	return statusData;
+ipcMain.handle('set-schedule-time', (event, newTime) => {
+    currentScheduleTime = newTime;
+    return true; 
 });
 
-function generateSchedule(startTime = '14:20') {
+ipcMain.handle('get-schedule-time', () => {
+    return currentScheduleTime;
+});
+
+ipcMain.handle('start-scheduler', () => {
+    console.log('Start scheduler dari batch');
+
+    loadStatus();
+
+    // 🔥 kalau belum ada status → generate dari batch menggunakan jam dari frontend
+    if (!statusData.length) {
+        // Kita masukkan currentScheduleTime ke sini
+        generateSchedule(currentScheduleTime); 
+    }
+
+    reassignMissedSchedules();
+    sendStatusUpdate();
+    scheduleNext();
+
+    return statusData;
+});
+
+function generateSchedule(startTime = currentScheduleTime) {
 	const batch = getTodayBatch(); // ❌ jangan difilter di sini
 
 	const [hour, minute] = startTime.split(':').map(Number);
