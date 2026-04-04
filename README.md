@@ -153,3 +153,76 @@ dist/
 - Buka file `.exe`
 - Scan QR WhatsApp
 - Aplikasi siap digunakan
+
+---
+
+## ⚠️ Disclaimer
+
+Aplikasi ini menggunakan library pihak ketiga yaitu **Baileys (WhatsApp Web API)** yang tidak merupakan layanan resmi dari WhatsApp.
+
+Penggunaan aplikasi ini sepenuhnya menjadi tanggung jawab pengguna.
+
+Hal-hal yang perlu diperhatikan:
+- Penggunaan dalam jumlah besar berpotensi menyebabkan akun WhatsApp dibatasi (ban)
+- Hindari pengiriman spam atau pesan berulang dalam waktu singkat
+- Gunakan jeda pengiriman (delay) yang wajar
+- Gunakan hanya untuk kebutuhan internal, notifikasi resmi, atau komunikasi yang relevan
+
+Developer tidak bertanggung jawab atas:
+- Pemblokiran akun WhatsApp
+- Penyalahgunaan aplikasi
+- Kerugian akibat penggunaan yang tidak sesuai
+
+---
+
+## 📌 Ketergantungan Utama
+
+Aplikasi ini menggunakan beberapa teknologi utama:
+
+- Node.js
+- Electron.js
+- Baileys (WhatsApp Web API)
+- JSON & CSV untuk pengolahan data
+
+Pastikan sudah menginstall:
+- Node.js (disarankan versi LTS)
+- NPM atau Yarn
+- Koneksi internet aktif
+- Akun WhatsApp aktif untuk scan QR
+
+---
+
+## 🔐 Keamanan & Privasi
+
+- Data kontak disimpan secara lokal
+- Tidak ada pengiriman data ke server eksternal
+- Pastikan file kontak dan data tidak dibagikan sembarangan
+- Gunakan aplikasi di lingkungan yang aman
+
+---
+
+## 📄 Lisensi
+
+MIT License
+
+Copyright (c) 2026
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, subject to the following conditions:
+
+- The above copyright notice and this permission notice shall be included in all copies
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.
+
+---
+
+## 🙌 Catatan
+
+Aplikasi ini dibuat untuk membantu otomatisasi pekerjaan administratif agar lebih efisien, dengan tetap memperhatikan etika penggunaan teknologi komunikasi.
+
+Gunakan dengan bijak.
