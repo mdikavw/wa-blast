@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { useMultiFileAuthState } = require('baileys');
-const startSock = require('./whatsapp/socket.js');
+const { startSock, setReconnect } = require('./whatsapp/socket.js');
 // const XLSX = require('xlsx');
 const fs = require('fs');
 
@@ -521,25 +521,34 @@ function createWindow() {
 
 ipcMain.on('toggle-connection', async () => {
     if (!connected) {
-        log('Memulai koneksi ke WhatsApp...');
-        setStatus('menyambungkan');
-        
-        sock = await startSock({ log, setStatus, updateButton });
-        connected = true;
-        updateButton('Tutup Koneksi');
-    } else {
-        log('Memutus koneksi dari WhatsApp...');
-        
-        if (sock) {
-            sock.ws.close(); 
-            sock = null;
-        }
-        
-        connected = false;
-        setStatus('terputus');
-        log('Koneksi dihentikan sementara (Sesi tetap aman).');
-        updateButton('Buka Koneksi');
-    }
+		setReconnect(true);
+		sock = await startSock({ log, setStatus, updateButton });
+		connected = true;
+		updateButton('Tutup Koneksi');
+	} else {
+		log('Memutus koneksi dari WhatsApp...');
+
+		setReconnect(false);
+
+		if (sock) {
+			sock.ev.removeAllListeners();
+
+			if (sock) {
+				try {
+					sock.end();
+				} catch (e) {
+					log('Error saat end socket: ' + e.message);
+				}
+			}
+
+			sock = null;
+		}
+
+		connected = false;
+		setStatus('terputus');
+		log('Koneksi dihentikan sementara (Sesi tetap aman).');
+		updateButton('Buka Koneksi');
+	}
 });
 
 ipcMain.handle('message', async (_, payload) => {
