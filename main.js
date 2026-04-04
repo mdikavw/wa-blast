@@ -50,6 +50,8 @@ ipcMain.handle('check-batch', () => {
 
 ipcMain.handle('save-batch', (_, csvString) => {
 	const file = path.join(batchDir, `${getToday()}.json`);
+	const variables = JSON.parse(fs.readFileSync(variablesPath));
+	const dynamicCols = variables.columns || [];
 
 	const contacts = getContacts();
 
@@ -85,18 +87,29 @@ ipcMain.handle('save-batch', (_, csvString) => {
 
 	const headers = lines[0].split(',').map(h => h.trim());
 
-	if (!headers.includes('nomor') || !headers.includes('selisih')) {
-		throw new Error('CSV harus punya kolom: nomor, selisih');
+	if (!headers.includes('nomor')) {
+		throw new Error('CSV harus punya kolom: nomor');
 	}
+
+	dynamicCols.forEach(col => {
+		if (!headers.includes(col)) {
+			console.warn(`Kolom ${col} tidak ditemukan di CSV, default '-'`);
+		}
+	});
 
 	const resultMap = {};
 
 	// 1. isi dari existing + default "-"
 	Object.values(contactMap).forEach(contact => {
-		resultMap[contact.nomor] = {
+		const base = {
 			...contact,
-			selisih: existing[contact.nomor]?.selisih ?? '-',
 		};
+
+		dynamicCols.forEach(col => {
+			base[col] = existing[contact.nomor]?.[col] ?? '-';
+		});
+
+		resultMap[contact.nomor] = base;
 	});
 
 	// 2. overwrite dari CSV
@@ -117,10 +130,15 @@ ipcMain.handle('save-batch', (_, csvString) => {
 			throw new Error(`Nomor ${nomor} tidak ditemukan`);
 		}
 
-		resultMap[nomor] = {
+		const newData = {
 			...contact,
-			selisih: obj.selisih || '-',
 		};
+
+		dynamicCols.forEach(col => {
+			newData[col] = obj[col] || '-';
+		});
+
+		resultMap[nomor] = newData;
 	}
 
 	// 3. simpan
@@ -169,6 +187,18 @@ function todayFile() {
 	return path.join(__dirname, 'data', 'batches', `${today}.json`);
 }
 
+function getDynamicCols() {
+	if (!fs.existsSync(variablesPath)) return [];
+	const variables = JSON.parse(fs.readFileSync(variablesPath));
+	return variables.columns || [];
+}
+
+function getTemplate() {
+	if (!fs.existsSync(variablesPath)) return '';
+	const variables = JSON.parse(fs.readFileSync(variablesPath));
+	return variables.message || '';
+}
+
 //simpan data penstatusan
 function saveStatus() {
 	fs.mkdirSync(path.dirname(todayFile()), { recursive: true });
@@ -204,9 +234,9 @@ ipcMain.handle('start-scheduler', () => {
 	return statusData;
 });
 
-function generateSchedule(startTime = '14:20') {
+function generateSchedule(startTime = '14:04') {
 	const batch = getTodayBatch(); // ❌ jangan difilter di sini
-
+	const dynamicCols = getDynamicCols();
 	const [hour, minute] = startTime.split(':').map(Number);
 	const start = new Date();
 	start.setHours(hour, minute, 0, 0);
@@ -217,14 +247,15 @@ function generateSchedule(startTime = '14:20') {
 	const maxInterval = 5 * 60 * 1000;
 
 	statusData = batch.map(row => {
-		const val = Number(String(row.selisih).trim());
+		const hasValue = dynamicCols.some(col => {
+			const val = Number(row[col]);
+			return Number.isFinite(val) && val > 0;
+		});
 
 		// ❌ skip kirim
-		if (!Number.isFinite(val) || val <= 0) {
+		if (!hasValue) {
 			return {
-				nama: row.nama,
-				nomor: row.nomor,
-				selisih: row.selisih,
+				...row,
 				jadwal: null,
 				status: 'skip',
 			};
@@ -232,9 +263,7 @@ function generateSchedule(startTime = '14:20') {
 
 		// ✅ normal schedule
 		const item = {
-			nama: row.nama,
-			nomor: row.nomor,
-			selisih: Number(row.selisih),
+			...row,
 			jadwal: new Date(currentTime).toISOString(),
 			status: 'menunggu',
 		};
@@ -323,7 +352,7 @@ function scheduleNext() {
 			saveStatus();
 			sendStatusUpdate();
 
-			await sendWhatAppMessage(next.nomor, next.nama, next.selisih);
+			await sendWhatAppMessage(next);
 
 			next.status = 'terkirim';
 			next.terkirim = new Date().toISOString();
@@ -349,9 +378,16 @@ function getTodayBatch() {
 	return JSON.parse(fs.readFileSync(file));
 }
 
-async function sendWhatAppMessage(nomor, nama, selisih) {
-	if (!sock?.user) {
-		throw new Error('WhatsApp belum siap');
+async function sendWhatAppMessage(row) {
+	// if (!sock?.user) {
+	// 	throw new Error('WhatsApp belum siap');
+	// }
+
+	// ✅ ambil dari row
+	const { nomor, nama } = row;
+
+	if (!nomor || !nama) {
+		throw new Error('Data tidak lengkap (nomor/nama)');
 	}
 
 	const jid = nomor + '@s.whatsapp.net';
@@ -359,15 +395,20 @@ async function sendWhatAppMessage(nomor, nama, selisih) {
 	const contact = contacts[nama] || {};
 	const sapaan = contact.sapaan || '';
 
-	const variables = JSON.parse(fs.readFileSync(variablesPath));
-	let template =
-		variables.message ||
-		'Selamat malam {sapaan}, Anda memiliki {selisih} data.';
+	const variablesData = {
+		...row, // semua kolom dari CSV / batch
+		sapaan, // tambahan dari contact
+	};
 
-	const message = template
-		.replace(/{nama}/g, nama)
-		.replace(/{sapaan}/g, sapaan)
-		.replace(/{selisih}/g, selisih);
+	let message = getTemplate();
+
+	Object.entries(variablesData).forEach(([key, value]) => {
+		const safeValue = value ?? '-';
+		message = message.replace(new RegExp(`{${key}}`, 'g'), safeValue);
+	});
+
+	// console.log(`Mengirim ke ${sapaan} ${nama}`);
+	// console.log('Pesan:', message);
 
 	await sock.presenceSubscribe(jid);
 	await sock.sendPresenceUpdate('composing', jid);
@@ -478,23 +519,23 @@ ipcMain.handle('message', async (_, payload) => {
 });
 
 ipcMain.handle('get-contacts', async () => {
-    try {
+	try {
 		const contacts = getContacts();
-        return contacts;
-    } catch (error) {
-        console.error('Gagal membaca kontak:', error);
-        return {};
-    }
+		return contacts;
+	} catch (error) {
+		console.error('Gagal membaca kontak:', error);
+		return {};
+	}
 });
 
 ipcMain.handle('save-contacts', async (event, data) => {
-    try {
-        fs.writeFileSync(contactPath, JSON.stringify(data, null, 4));
-        return true;
-    } catch (error) {
-        console.error('Gagal menyimpan kontak:', error);
-        return false;
-    }
+	try {
+		fs.writeFileSync(contactPath, JSON.stringify(data, null, 4));
+		return true;
+	} catch (error) {
+		console.error('Gagal menyimpan kontak:', error);
+		return false;
+	}
 });
 
 app.whenReady().then(() => {

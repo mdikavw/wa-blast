@@ -85,29 +85,32 @@
 		</div>
 
 		<script>
-			let variables = [];
+			let variables = {
+				columns: [],
+				message: '',
+			};
 
 			const table = document.getElementById('varTable');
 
 			function render() {
 				table.innerHTML = '';
 
-				variables.forEach(key => {
+				(variables.columns || []).forEach(key => {
 					const tr = document.createElement('tr');
 
 					tr.innerHTML = `
-      <td class="p-2">{${key}}</td>
-      <td class="p-2 text-center">
-        <button onclick="deleteVar('${key}')" class="text-red-400">Hapus</button>
-      </td>
-    `;
+			<td class="p-2">{${key}}</td>
+			<td class="p-2 text-center">
+				<button onclick="deleteVar('${key}')" class="text-red-400">Hapus</button>
+			</td>
+		`;
 
 					table.appendChild(tr);
 				});
 			}
 
 			function deleteVar(key) {
-				variables = variables.filter(v => v !== key);
+				variables.columns = variables.columns.filter(v => v !== key);
 				save();
 				render();
 			}
@@ -125,8 +128,8 @@
 
 					if (!name) return;
 
-					if (!variables.includes(name)) {
-						variables.push(name);
+					if (!variables.columns.includes(name)) {
+						variables.columns.push(name);
 					}
 
 					await save();
@@ -136,7 +139,13 @@
 				});
 
 			async function load() {
-				variables = await window.api.getVariables();
+				const data = await window.api.getVariables();
+
+				variables = {
+					columns: data?.columns || [],
+					message: data?.message || '',
+				};
+
 				render();
 			}
 

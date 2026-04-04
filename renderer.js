@@ -1,5 +1,6 @@
 let contacts = {};
 let rows = {};
+let variables = {};
 
 function addLog(text) {
 	const container = document.getElementById('log-container');
@@ -19,22 +20,31 @@ async function loadContacts() {
 	Object.entries(contacts).forEach(([name, data]) => {
 		const tr = document.createElement('tr');
 
+		const dynamicCols = variables.columns || [];
+
 		tr.innerHTML = `
 			<td class="p-2">${data.sapaan} ${name}</td>
 			<td class="p-2">+${data.number ?? '-'}</td>
-			<td class="p-2 text-center" data-name="${name}">-</td>
-			<td class="p-2 text-center" data-name="${name}">-</td>
-			<td class="p-2 text-center" data-name="${name}">-</td>
+			${dynamicCols.map(() => `<td class="p-2 text-center">-</td>`).join('')}
+			<td class="p-2 text-center">-</td>
+			<td class="p-2 text-center">-</td>
 		`;
 
 		table.appendChild(tr);
 
 		const key = normalizeName(name);
-		rows[key] = {
-			selisih: tr.children[2],
-			jadwal: tr.children[3],
-			status: tr.children[4],
-		};
+		const rowObj = {};
+
+		// kolom dinamis
+		dynamicCols.forEach((col, index) => {
+			rowObj[col] = tr.children[2 + index];
+		});
+
+		// tetap
+		rowObj.jadwal = tr.children[2 + dynamicCols.length];
+		rowObj.status = tr.children[3 + dynamicCols.length];
+
+		rows[key] = rowObj;
 	});
 }
 
@@ -46,9 +56,24 @@ function normalizeName(name) {
 		.trim();
 }
 
+function renderHeader() {
+	const head = document.getElementById('table-head');
+	const dynamicCols = variables.columns || [];
+	head.innerHTML = `
+	<tr>
+			<th>Nama</th>
+			<th>Nomor</th>
+			${dynamicCols.map(col => `<th>${col}</th>`).join('')}
+			<th>Jadwal</th>
+			<th>Status</th>
+		</tr>`;
+}
+
 function updateInitialTable(contacts) {
 	const table = document.getElementById('status-table');
 	table.innerHTML = '';
+
+	const dynamicCols = variables.columns || [];
 
 	Object.entries(contacts).forEach(([name, data]) => {
 		const tr = document.createElement('tr');
@@ -56,7 +81,7 @@ function updateInitialTable(contacts) {
 		tr.innerHTML = `
 			<td class="p-2">${data.sapaan} ${name}</td>
 			<td class="p-2">+${data.number ?? '-'}</td>
-			<td class="p-2 text-center">-</td>
+			${dynamicCols.map(() => `<td class="p-2 text-center">-</td>`).join('')}
 			<td class="p-2 text-center">-</td>
 			<td class="p-2 text-center">-</td>
 		`;
@@ -68,6 +93,7 @@ function updateInitialTable(contacts) {
 function updateTable(data = []) {
 	const table = document.getElementById('status-table');
 	table.innerHTML = '';
+	const dynamicCols = variables.columns || [];
 
 	data.sort((a, b) => new Date(a.jadwal) - new Date(b.jadwal)).forEach(
 		item => {
@@ -76,7 +102,12 @@ function updateTable(data = []) {
 			tr.innerHTML = `
 				<td class="p-2">${item.nama}</td>
 				<td class="p-2">+${item.nomor}</td>
-				<td class="p-2 text-center">${item.selisih ?? '-'}</td>
+				${dynamicCols
+					.map(
+						col =>
+							`<td class="p-2 text-center">${item[col] ?? '-'}</td>`,
+					)
+					.join('')}				
 				<td class="p-2 text-center">${
 					item.jadwal
 						? new Date(item.jadwal).toLocaleTimeString()
@@ -91,6 +122,8 @@ function updateTable(data = []) {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+	variables = await api.getVariables();
+	renderHeader();
 	await loadContacts();
 	async function init() {
 		const exists = await api.checkBatch();
@@ -153,9 +186,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 	const saveMessageBtn = document.getElementById('save-message');
 
 	// load saat awal
-	const vars = await api.getVariables();
-	if (vars?.message) {
-		messageInput.value = vars.message;
+	if (variables?.message) {
+		messageInput.value = variables.message;
 	}
 
 	// simpan
