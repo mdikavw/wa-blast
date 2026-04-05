@@ -143,7 +143,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 		.getElementById('start-scheduler')
 		.addEventListener('click', async () => {
 			try {
-				await api.startScheduler();
+				const data = await api.startScheduler();
+				updateTable(data);
 				addLog('Scheduler dijalankan');
 			} catch (err) {
 				addLog(err.message);
@@ -182,40 +183,42 @@ window.addEventListener('DOMContentLoaded', async () => {
 	// 	updateTable(saved);
 	// });
 	const timeInput = document.getElementById('schedule-time');
-    const saveTimeBtn = document.getElementById('save-time');
+	const saveTimeBtn = document.getElementById('save-time');
 	const activeTime = await api.getScheduleTime();
 	const messageInput = document.getElementById('message-template');
 	const saveMessageBtn = document.getElementById('save-message');
 
 	const logoutBtn = document.getElementById('logout-btn');
-    logoutBtn.addEventListener('click', () => {
-        const confirmLogout = confirm('Apakah Anda yakin ingin Logout? Anda harus melakukan scan QR Code ulang setelah ini.');
-        
-        if (confirmLogout) {
-            api.logoutWhatsApp();
-        }
-    });
+	logoutBtn.addEventListener('click', () => {
+		const confirmLogout = confirm(
+			'Apakah Anda yakin ingin Logout? Anda harus melakukan scan QR Code ulang setelah ini.',
+		);
+
+		if (confirmLogout) {
+			api.logoutWhatsApp();
+		}
+	});
 
 	if (activeTime) {
-        timeInput.value = activeTime;
-    }
+		timeInput.value = activeTime;
+	}
 
-    // Aksi saat tombol simpan ditekan
-    saveTimeBtn.addEventListener('click', async () => {
-        const selectedTime = timeInput.value;
-        
-        if (!selectedTime) {
-            addLog('Gagal: Silakan atur jam terlebih dahulu.');
-            return;
-        }
+	// Aksi saat tombol simpan ditekan
+	saveTimeBtn.addEventListener('click', async () => {
+		const selectedTime = timeInput.value;
 
-        try {
-            await api.setScheduleTime(selectedTime);
-            addLog(`Jam pengiriman berhasil diatur ke: ${selectedTime}`);
-        } catch (err) {
-            addLog(`Gagal mengatur jam: ${err.message}`);
-        }
-    });
+		if (!selectedTime) {
+			addLog('Gagal: Silakan atur jam terlebih dahulu.');
+			return;
+		}
+
+		try {
+			await api.setScheduleTime(selectedTime);
+			addLog(`Jam pengiriman berhasil diatur ke: ${selectedTime}`);
+		} catch (err) {
+			addLog(`Gagal mengatur jam: ${err.message}`);
+		}
+	});
 	// load saat awal
 	if (variables?.message) {
 		messageInput.value = variables.message;

@@ -2,26 +2,33 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { useMultiFileAuthState } = require('baileys');
 const { startSock, setReconnect } = require('./whatsapp/socket.js');
-// const XLSX = require('xlsx');
 const fs = require('fs');
 
-const userDataPath = app.getPath('userData'); 
+const userDataPath = app.getPath('userData');
 const authFolder = path.join(userDataPath, 'baileys_auth');
+const contactPath = path.join(userDataPath, 'contact.json');
+const variablesPath = path.join(userDataPath, 'variables.json');
+function ensureFile(filePath, defaultData) {
+	if (!fs.existsSync(filePath)) {
+		fs.writeFileSync(filePath, JSON.stringify(defaultData, null, 2));
+	}
+}
+
+ensureFile(contactPath, {});
+ensureFile(variablesPath, {
+	columns: [],
+	message: 'Halo {sapaan} {nama}',
+	scheduleTime: '14:00',
+});
 
 let win;
 let sock;
 let connected;
-const contactPath = path.join(__dirname, 'contact.json');
-const contacts = JSON.parse(
-	fs.readFileSync(path.join(__dirname, 'contact.json')),
-);
-let statusData = [];
+const contacts = getContacts();
 let schedulerTimer = null;
 let currentScheduleTime = '14:20';
 
-const batchDir = path.join(__dirname, 'data', 'status');
-const variablesPath = path.join(__dirname, 'data', 'variables.json');
-
+const batchDir = path.join(userDataPath, 'data', 'batches');
 if (!fs.existsSync(batchDir)) {
 	fs.mkdirSync(batchDir, { recursive: true });
 }
@@ -162,37 +169,6 @@ ipcMain.handle('get-batch', () => {
 	return JSON.parse(fs.readFileSync(file));
 });
 
-// ipcMain.handle('parse-xlsx', (_, buffer) => {
-// 	const workbook = XLSX.read(buffer);
-// 	const sheet = workbook.Sheets[workbook.SheetNames[0]];
-// 	const result = [];
-
-// 	for (let row = 11; row <= 36; row++) {
-// 		const nama = sheet[`C${row}`]?.v;
-// 		const selisih = sheet[`L${row}`]?.v;
-
-// 		if (!nama) continue;
-
-// 		const item = {
-// 			nama,
-// 			selisih,
-// 			kontak: contacts[nama].number || null, // ✅ langsung ambil
-// 			jadwal: new Date().toISOString(),
-// 			status: 'menunggu',
-// 		};
-
-// 		result.push(item);
-// 	}
-// 	console.log(result);
-
-// 	return result;
-// });
-
-function todayFile() {
-	const today = new Date().toISOString().slice(0, 10);
-	return path.join(__dirname, 'data', 'batches', `${today}.json`);
-}
-
 function getDynamicCols() {
 	if (!fs.existsSync(variablesPath)) return [];
 	const variables = JSON.parse(fs.readFileSync(variablesPath));
@@ -202,49 +178,35 @@ function getDynamicCols() {
 function getTemplate() {
 	if (!fs.existsSync(variablesPath)) return '';
 	const variables = JSON.parse(fs.readFileSync(variablesPath));
-	return variables.message || '';
+	return variables.message || 'Halo, pesan ini dikirim oleh WhatsappBlast!';
 }
-
-//simpan data penstatusan
-function saveStatus() {
-	fs.mkdirSync(path.dirname(todayFile()), { recursive: true });
-	fs.writeFileSync(todayFile(), JSON.stringify(statusData, null, 2));
-}
-
-//load data penstatusan
-function loadStatus() {
-	const file = todayFile();
-	// jika hari ini tidak ada file, keluar
-	if (!fs.existsSync(file)) {
-		statusData = [];
-		return;
-	}
-	//assign file ke statusData
-	statusData = JSON.parse(fs.readFileSync(file));
-}
-
 
 ipcMain.handle('start-scheduler', () => {
-    console.log('Start scheduler dari batch');
+	console.log('Start scheduler dari batch');
 
-    loadStatus();
+	const file = path.join(batchDir, `${getToday()}.json`);
 
-    // 🔥 kalau belum ada status → generate dari batch menggunakan jam dari frontend
-    if (!statusData.length) {
-        // Kita masukkan currentScheduleTime ke sini
-        generateSchedule(currentScheduleTime); 
-    }
+	if (!fs.existsSync(file)) {
+		throw new Error('Batch belum ada');
+	}
 
-    reassignMissedSchedules();
-    sendStatusUpdate();
-    scheduleNext();
+	const batch = JSON.parse(fs.readFileSync(file));
 
-    return statusData;
+	// kalau belum ada jadwal → generate
+	const belumAdaJadwal = batch.every(i => !i.jadwal);
+
+	if (belumAdaJadwal) {
+		generateSchedule(currentScheduleTime);
+	}
+
+	reassignMissedSchedules();
+	scheduleNext();
+
+	return JSON.parse(fs.readFileSync(file));
 });
 
 function generateSchedule(startTime = currentScheduleTime) {
 	console.log(`Membuat jadwal mulai pukul: ${startTime}`);
-	const batch = getTodayBatch(); // ❌ jangan difilter di sini
 	const dynamicCols = getDynamicCols();
 	const [hour, minute] = startTime.split(':').map(Number);
 	const start = new Date();
@@ -255,7 +217,9 @@ function generateSchedule(startTime = currentScheduleTime) {
 	const minInterval = 60 * 1000;
 	const maxInterval = 5 * 60 * 1000;
 
-	statusData = batch.map(row => {
+	const file = path.join(batchDir, `${getToday()}.json`);
+	const batch = JSON.parse(fs.readFileSync(file));
+	const updated = batch.map(row => {
 		const hasValue = dynamicCols.some(col => {
 			const val = Number(row[col]);
 			return Number.isFinite(val) && val > 0;
@@ -285,23 +249,25 @@ function generateSchedule(startTime = currentScheduleTime) {
 		return item;
 	});
 
-	saveStatus();
+	fs.writeFileSync(file, JSON.stringify(updated, null, 2));
+	return updated;
 }
 
 function reassignMissedSchedules() {
-	console.log('Reassigning');
-	const pending = statusData
+	const file = path.join(batchDir, `${getToday()}.json`);
+	if (!fs.existsSync(file)) return;
+
+	const batch = JSON.parse(fs.readFileSync(file));
+
+	const pending = batch
 		.filter(i => i.status === 'menunggu')
 		.sort((a, b) => new Date(a.jadwal) - new Date(b.jadwal));
-	// jika tidak ada data dengan status "menunggu", keluar
+
 	if (!pending.length) return;
 
 	const now = Date.now();
 
-	// jika data pending[] paling awal di depan now(), keluar
 	if (new Date(pending[0].jadwal).getTime() > now) return;
-	// else
-	console.log('Ada jadwal terlewat, menjadwalkan ulang...');
 
 	let currentTime = now;
 
@@ -317,14 +283,18 @@ function reassignMissedSchedules() {
 		currentTime += randomInterval;
 	}
 
-	saveStatus();
-	sendStatusUpdate();
+	fs.writeFileSync(file, JSON.stringify(batch, null, 2));
 }
 
 function getNextPending() {
+	const file = path.join(batchDir, `${getToday()}.json`);
+	if (!fs.existsSync(file)) return null;
+
+	const batch = JSON.parse(fs.readFileSync(file));
+
 	let next = null;
 
-	for (const item of statusData) {
+	for (const item of batch) {
 		if (item.status !== 'menunggu') continue;
 
 		if (!next || new Date(item.jadwal) < new Date(next.jadwal)) {
@@ -336,21 +306,23 @@ function getNextPending() {
 }
 
 function scheduleNext() {
-	// 🔥 STOP timer lama
 	if (schedulerTimer) {
 		clearTimeout(schedulerTimer);
 		schedulerTimer = null;
 	}
 
-	const next = getNextPending();
+	const file = path.join(batchDir, `${getToday()}.json`);
+	if (!fs.existsSync(file)) return;
+
+	const batch = JSON.parse(fs.readFileSync(file));
+
+	const next = batch
+		.filter(i => i.status === 'menunggu')
+		.sort((a, b) => new Date(a.jadwal) - new Date(b.jadwal))[0];
 
 	if (!next) {
 		console.log('Semua pesan selesai');
 		return;
-	}
-
-	if (next.status === 'skip') {
-		return scheduleNext();
 	}
 
 	const delay = Math.max(0, new Date(next.jadwal) - Date.now());
@@ -358,8 +330,7 @@ function scheduleNext() {
 	schedulerTimer = setTimeout(async () => {
 		try {
 			next.status = 'mengirim';
-			saveStatus();
-			sendStatusUpdate();
+			fs.writeFileSync(file, JSON.stringify(batch, null, 2));
 
 			await sendWhatAppMessage(next);
 
@@ -369,10 +340,8 @@ function scheduleNext() {
 			next.status = 'gagal';
 		}
 
-		saveStatus();
-		sendStatusUpdate();
+		fs.writeFileSync(file, JSON.stringify(batch, null, 2));
 
-		// 🔁 lanjut ke berikutnya
 		scheduleNext();
 	}, delay);
 }
@@ -388,9 +357,9 @@ function getTodayBatch() {
 }
 
 async function sendWhatAppMessage(row) {
-	// if (!sock?.user) {
-	// 	throw new Error('WhatsApp belum siap');
-	// }
+	if (!sock?.user) {
+		throw new Error('WhatsApp belum siap');
+	}
 
 	// ✅ ambil dari row
 	const { nomor, nama } = row;
@@ -401,7 +370,7 @@ async function sendWhatAppMessage(row) {
 
 	const jid = nomor + '@s.whatsapp.net';
 
-	const contact = contacts[nama] || {};
+	const contact = getContacts()[nama] || {};
 	const sapaan = contact.sapaan || '';
 
 	const variablesData = {
@@ -429,18 +398,6 @@ async function sendWhatAppMessage(row) {
 	await sock.sendPresenceUpdate('paused', jid);
 }
 
-ipcMain.handle('save-status', (_, data) => {
-	generateSchedule(data);
-	reassignMissedSchedules();
-	scheduleNext();
-	return statusData;
-});
-
-ipcMain.handle('load-status', (_, data) => {
-	loadStatus();
-	return statusData;
-});
-
 function log(message) {
 	if (win) {
 		win.webContents.send('log', message);
@@ -460,9 +417,11 @@ function updateButton(label) {
 }
 
 function sendStatusUpdate() {
-	if (win) {
-		win.webContents.send('status-data', statusData);
-	}
+	const file = path.join(batchDir, `${getToday()}.json`);
+	if (!fs.existsSync(file)) return;
+
+	const batch = JSON.parse(fs.readFileSync(file));
+	win.webContents.send('status-data', batch);
 }
 
 ipcMain.on('navigate', (event, page) => {
@@ -471,12 +430,11 @@ ipcMain.on('navigate', (event, page) => {
 	}
 });
 
-
 if (fs.existsSync(variablesPath)) {
-    const vars = JSON.parse(fs.readFileSync(variablesPath));
-    if (vars.scheduleTime) {
-        currentScheduleTime = vars.scheduleTime;
-    }
+	const vars = JSON.parse(fs.readFileSync(variablesPath));
+	if (vars.scheduleTime) {
+		currentScheduleTime = vars.scheduleTime;
+	}
 }
 
 ipcMain.handle('get-variables', () => {
@@ -489,22 +447,22 @@ ipcMain.handle('save-variables', (_, data) => {
 });
 
 ipcMain.handle('get-schedule-time', () => {
-    return currentScheduleTime;
+	return currentScheduleTime;
 });
 
 ipcMain.handle('set-schedule-time', (_, newTime) => {
-    currentScheduleTime = newTime;
+	currentScheduleTime = newTime;
 
-    let currentVars = {};
-    if (fs.existsSync(variablesPath)) {
-        currentVars = JSON.parse(fs.readFileSync(variablesPath));
-    }
+	let currentVars = {};
+	if (fs.existsSync(variablesPath)) {
+		currentVars = JSON.parse(fs.readFileSync(variablesPath));
+	}
 
-    currentVars.scheduleTime = newTime;
+	currentVars.scheduleTime = newTime;
 
-    fs.writeFileSync(variablesPath, JSON.stringify(currentVars, null, 2));
+	fs.writeFileSync(variablesPath, JSON.stringify(currentVars, null, 2));
 
-    return true;
+	return true;
 });
 
 function createWindow() {
@@ -520,7 +478,7 @@ function createWindow() {
 }
 
 ipcMain.on('toggle-connection', async () => {
-    if (!connected) {
+	if (!connected) {
 		setReconnect(true);
 		sock = await startSock({ log, setStatus, updateButton });
 		connected = true;
@@ -589,36 +547,34 @@ ipcMain.handle('save-contacts', async (event, data) => {
 });
 
 ipcMain.on('logout-whatsapp', async () => {
-    log('Proses Logout dari WhatsApp diminta...');
-    
-    try {
-        if (sock) {
-            await sock.logout(); 
-            sock = null;
-        } else {
-            const userDataPath = app.getPath('userData');
-            const authFolder = path.join(userDataPath, 'wa_auth_session');
-            
-            if (fs.existsSync(authFolder)) {
-                fs.rmSync(authFolder, { recursive: true, force: true });
-            }
-        }
+	log('Proses Logout dari WhatsApp diminta...');
 
-        connected = false;
-        setStatus('terputus');
-        updateButton('Buka Koneksi');
-        log('Berhasil Logout. Sesi telah dihapus. Silakan Buka Koneksi untuk scan QR baru.');
-        
-    } catch (error) {
-        log('Gagal melakukan logout: ' + error.message);
-    }
+	try {
+		if (sock) {
+			await sock.logout();
+			sock = null;
+		} else {
+			const userDataPath = app.getPath('userData');
+			const authFolder = path.join(userDataPath, 'wa_auth_session');
+
+			if (fs.existsSync(authFolder)) {
+				fs.rmSync(authFolder, { recursive: true, force: true });
+			}
+		}
+
+		connected = false;
+		setStatus('terputus');
+		updateButton('Buka Koneksi');
+		log(
+			'Berhasil Logout. Sesi telah dihapus. Silakan Buka Koneksi untuk scan QR baru.',
+		);
+	} catch (error) {
+		log('Gagal melakukan logout: ' + error.message);
+	}
 });
 
 app.whenReady().then(() => {
 	createWindow();
-
-	loadStatus();
-	//urutkan dan generate jadwal baru jika terlewat
 	reassignMissedSchedules();
 	scheduleNext();
 });
