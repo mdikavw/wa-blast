@@ -1,63 +1,62 @@
 {
-    "name": "whatsappblast",
-    "version": "1.0.0",
-    "type": "commonjs",
-    "main": "main.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "electronmon .",
-        "dist": "electron-builder"
-    },
-    "electronmon": {
-        "patterns": [
-            "!auth/**",
-            "!data/**"
-        ]
-    },
-    "dependencies": {
-        "@hapi/boom": "^10.0.1",
-        "baileys": "^7.0.0-rc.9",
-        "dotenv": "^17.3.1",
-        "pino": "^10.3.1",
-        "qrcode": "^1.5.4",
-        "xlsx": "^0.18.5"
-    },
-    "devDependencies": {
-        "@tailwindcss/cli": "^4.2.1",
-        "@types/better-sqlite3": "^7.6.13",
-        "@types/qrcode": "^1.5.6",
-        "electron": "^40.8.0",
-        "electron-builder": "^24.13.3",
-        "electronmon": "^2.0.4",
-        "fs": "^0.0.1-security",
-        "pino-pretty": "^13.1.3",
-        "readline": "^1.3.0",
-        "tailwindcss": "^4.2.1",
-        "typescript": "^5.9.3"
-    },
-    "build": {
-        "appId": "com.uptppd.whatsappblast",
-        "productName": "WhatsappBlast",
-        "asar": true,
-        "compression": "maximum",
-        "directories": {
-            "output": "release/"
-        },
-        "files": [
-            "**/*",
-            "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-            "!auth/**",
-            "!data/**",
-            "!src/**"
-        ],
-        "win": {
-            "target": "nsis"
-        },
-        "nsis": {
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true,
-            "createDesktopShortcut": true,
-            "runAfterFinish": true
-        }
-    }
+	"name": "whatsappblast",
+	"version": "1.0.0",
+	"type": "commonjs",
+	"main": "main.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "electronmon .",
+		"dist": "electron-builder"
+	},
+	"electronmon": {
+		"patterns": [
+			"!auth/**",
+			"!data/**"
+		]
+	},
+	"dependencies": {
+		"@hapi/boom": "^10.0.1",
+		"baileys": "^7.0.0-rc.9",
+		"dotenv": "^17.3.1",
+		"pino": "^10.3.1",
+		"qrcode": "^1.5.4",
+		"xlsx": "^0.18.5"
+	},
+	"devDependencies": {
+		"@tailwindcss/cli": "^4.2.1",
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/qrcode": "^1.5.6",
+		"electron": "^40.8.0",
+		"electron-builder": "^24.13.3",
+		"electronmon": "^2.0.4",
+		"fs": "^0.0.1-security",
+		"pino-pretty": "^13.1.3",
+		"readline": "^1.3.0",
+		"tailwindcss": "^4.2.1",
+		"typescript": "^5.9.3"
+	},
+	"build": {
+		"appId": "com.uptppd.whatsappblast",
+		"productName": "WhatsappBlast",
+		"asar": true,
+		"compression": "maximum",
+		"directories": {
+			"output": "release/"
+		},
+		"files": [
+			"**/*",
+			"!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+			"!auth/**",
+			"!src/**"
+		],
+		"win": {
+			"target": "nsis"
+		},
+		"nsis": {
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true,
+			"createDesktopShortcut": true,
+			"runAfterFinish": true
+		}
+	}
 }

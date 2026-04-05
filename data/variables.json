@@ -1,8 +1,0 @@
-{
-  "columns": [
-    "selisih",
-    "selisih2"
-  ],
-  "message": "Selamat siang {sapaan}, Sampai dengan hari ini {sapaan} masih memiliki {selisih} surat perpajakan belum terstatus. Mohon tidak lupa melakukan penstatusan surat perpajakan",
-  "scheduleTime": "15:20"
-}
