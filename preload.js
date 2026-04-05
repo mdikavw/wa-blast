@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.on('status-data', (_, data) => callback(data)),
     navigate: page => ipcRenderer.send('navigate', page),
     getVariables: () => ipcRenderer.invoke('get-variables'),
-    saveVariables: data => ipcRenderer.invoke('save-variables', data),
+    saveVariables: (data) => ipcRenderer.invoke('save-variables', data),
     getContacts: () => ipcRenderer.invoke('get-contacts'),
     saveContacts: data => ipcRenderer.invoke('save-contacts', data),
     checkBatch: () => ipcRenderer.invoke('check-batch'),

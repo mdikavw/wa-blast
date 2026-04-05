@@ -233,15 +233,16 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 	// simpan
 	saveMessageBtn.addEventListener('click', async () => {
-		const message = messageInput.value;
+        const message = messageInput.value;
 
-		await api.saveVariables({
-			...vars,
-			message,
-		});
+        await window.api.saveVariables({ 
+            message: message 
+        });
 
-		addLog('Template pesan disimpan');
-	});
+        if (typeof addLog === 'function') {
+            addLog('Template pesan berhasil disimpan');
+        }
+    });
 
 	const btn = document.getElementById('btn');
 	const title = document.getElementById('title');

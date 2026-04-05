@@ -443,7 +443,25 @@ ipcMain.handle('get-variables', () => {
 });
 
 ipcMain.handle('save-variables', (_, data) => {
-	fs.writeFileSync(variablesPath, JSON.stringify(data, null, 2));
+    const userDataPath = app.getPath('userData');
+    const variablesPath = path.join(userDataPath, 'variables.json');
+
+    try {
+        let currentVars = {};
+        if (fs.existsSync(variablesPath)) {
+            const fileContent = fs.readFileSync(variablesPath, 'utf8');
+            if (fileContent) {
+                currentVars = JSON.parse(fileContent);
+            }
+        }
+        const updatedVars = { ...currentVars, ...data };
+
+        fs.writeFileSync(variablesPath, JSON.stringify(updatedVars, null, 2), 'utf8');
+        return true;
+    } catch (error) {
+        console.error('Gagal menyimpan variabel:', error);
+        return false;
+    }
 });
 
 ipcMain.handle('get-schedule-time', () => {
