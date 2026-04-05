@@ -357,11 +357,12 @@ function getTodayBatch() {
 }
 
 async function sendWhatAppMessage(row) {
-	if (!sock?.user) {
+	const sock = getSock(); // ✅ ambil socket terbaru
+
+	if (!sock || !sock.user) {
 		throw new Error('WhatsApp belum siap');
 	}
 
-	// ✅ ambil dari row
 	const { nomor, nama } = row;
 
 	if (!nomor || !nama) {
@@ -374,8 +375,8 @@ async function sendWhatAppMessage(row) {
 	const sapaan = contact.sapaan || '';
 
 	const variablesData = {
-		...row, // semua kolom dari CSV / batch
-		sapaan, // tambahan dari contact
+		...row,
+		sapaan,
 	};
 
 	let message = getTemplate();
@@ -384,9 +385,6 @@ async function sendWhatAppMessage(row) {
 		const safeValue = value ?? '-';
 		message = message.replace(new RegExp(`{${key}}`, 'g'), safeValue);
 	});
-
-	// console.log(`Mengirim ke ${sapaan} ${nama}`);
-	// console.log('Pesan:', message);
 
 	await sock.presenceSubscribe(jid);
 	await sock.sendPresenceUpdate('composing', jid);
