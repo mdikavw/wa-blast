@@ -12,40 +12,47 @@ function addLog(text) {
 }
 
 async function loadContacts() {
-	const table = document.getElementById('status-table');
-	const res = await fetch('contact.json');
-	contacts = await res.json();
+    const table = document.getElementById('status-table');
+    
+    // GANTI fetch dengan panggilan API IPC ke main process
+    try {
+        contacts = await window.api.getContacts();
+    } catch (error) {
+        console.error("Gagal memuat kontak:", error);
+        contacts = {}; // Fallback jika kosong/gagal
+    }
 
-	let i = 1;
-	Object.entries(contacts).forEach(([name, data]) => {
-		const tr = document.createElement('tr');
+    let i = 1;
+    Object.entries(contacts).forEach(([name, data]) => {
+        const tr = document.createElement('tr');
 
-		const dynamicCols = variables.columns || [];
+        // Pastikan variabel 'variables' sudah di-load sebelumnya di file ini
+        const dynamicCols = variables.columns || [];
 
-		tr.innerHTML = `
-			<td class="p-2">${data.sapaan} ${name}</td>
-			<td class="p-2">+${data.number ?? '-'}</td>
-			${dynamicCols.map(() => `<td class="p-2 text-center">-</td>`).join('')}
-			<td class="p-2 text-center">-</td>
-			<td class="p-2 text-center">-</td>
-		`;
+        tr.innerHTML = `
+            <td class="p-2">${data.sapaan} ${name}</td>
+            <td class="p-2">+${data.number ?? '-'}</td>
+            ${dynamicCols.map(() => `<td class="p-2 text-center">-</td>`).join('')}
+            <td class="p-2 text-center">-</td>
+            <td class="p-2 text-center">-</td>
+        `;
 
-		table.appendChild(tr);
+        table.appendChild(tr);
 
-		const key = normalizeName(name);
-		const rowObj = {};
+        const key = normalizeName(name);
+        const rowObj = {};
 
-		// kolom dinamis
-		dynamicCols.forEach((col, index) => {
-			rowObj[col] = tr.children[2 + index];
-		});
+        // kolom dinamis
+        dynamicCols.forEach((col, index) => {
+            rowObj[col] = tr.children[2 + index];
+        });
 
-		// tetap
-		rowObj.jadwal = tr.children[2 + dynamicCols.length];
-		rowObj.status = tr.children[3 + dynamicCols.length];
+        // tetap
+        rowObj.jadwal = tr.children[2 + dynamicCols.length];
+        rowObj.status = tr.children[3 + dynamicCols.length];
 
-		rows[key] = rowObj;
-	});
+        rows[key] = rowObj;
+    });
 }
 
 function normalizeName(name) {
@@ -226,15 +233,16 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 	// simpan
 	saveMessageBtn.addEventListener('click', async () => {
-		const message = messageInput.value;
+        const message = messageInput.value;
 
-		await api.saveVariables({
-			...vars,
-			message,
-		});
+        await window.api.saveVariables({ 
+            message: message 
+        });
 
-		addLog('Template pesan disimpan');
-	});
+        if (typeof addLog === 'function') {
+            addLog('Template pesan berhasil disimpan');
+        }
+    });
 
 	const btn = document.getElementById('btn');
 	const title = document.getElementById('title');

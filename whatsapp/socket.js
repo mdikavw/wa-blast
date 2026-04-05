@@ -19,22 +19,24 @@ const transportTargets = [
     {
         target: 'pino/file',
         options: { destination: logFilePath },
-        level: 'trace',
+        level: 'error',
     },
 ];
 
 let shouldReconnect = true;
+let isReconnecting = false;
+let currentSock = null;
 
 if (!app.isPackaged) {
     transportTargets.unshift({
         target: 'pino-pretty',
         options: { colorize: true },
-        level: 'trace',
+        level: 'info',
     });
 }
 
 const logger = P({
-    level: 'trace',
+    level: 'info',
     transport: {
         targets: transportTargets,
     },
@@ -59,6 +61,7 @@ async function startSock({ log, setStatus, updateButton }) {
         retryRequestDelayMs: 5000,
         browser: ['MacOS', 'Chrome', '1.0.0']
     });
+    currentSock = sock;
 
 	sock.ev.on('creds.update', async () => {
 		log('Menyimpan kredensial sesi...');
@@ -86,20 +89,24 @@ async function startSock({ log, setStatus, updateButton }) {
 		}
 
         if (connection === 'close') {
-			log('Koneksi tertutup!');
-			setStatus('terputus');
+            log('Koneksi tertutup!');
+            setStatus('terputus');
 
-			if (
-				shouldReconnect &&
-				lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
-			) {
-				log('Reconnect otomatis...');
+            if (
+                shouldReconnect &&
+                !isReconnecting &&
+                lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
+            ) {
+                isReconnecting = true;
 
-				setTimeout(() => {
-					startSock({ log, setStatus, updateButton });
-				}, 3000);
-			}
-		}
+                log('Reconnect otomatis...');
+
+                setTimeout(() => {
+                    isReconnecting = false;
+                    startSock({ log, setStatus, updateButton });
+                }, 3000);
+            }
+        }
 			});
     
     return sock;
@@ -109,4 +116,9 @@ function setReconnect(value) {
     shouldReconnect = value;
 }
 
-module.exports = { startSock, setReconnect };
+function getSock() {
+    return currentSock;
+}
+
+module.exports = { startSock, setReconnect, getSock };
+

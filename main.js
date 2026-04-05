@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { useMultiFileAuthState } = require('baileys');
-const { startSock, setReconnect } = require('./whatsapp/socket.js');
+const { startSock, setReconnect, getSock } = require('./whatsapp/socket.js');
 const fs = require('fs');
 
 const userDataPath = app.getPath('userData');
@@ -357,11 +357,12 @@ function getTodayBatch() {
 }
 
 async function sendWhatAppMessage(row) {
-	if (!sock?.user) {
+	const sock = getSock(); // ✅ ambil socket terbaru
+
+	if (!sock || !sock.user) {
 		throw new Error('WhatsApp belum siap');
 	}
 
-	// ✅ ambil dari row
 	const { nomor, nama } = row;
 
 	if (!nomor || !nama) {
@@ -374,8 +375,8 @@ async function sendWhatAppMessage(row) {
 	const sapaan = contact.sapaan || '';
 
 	const variablesData = {
-		...row, // semua kolom dari CSV / batch
-		sapaan, // tambahan dari contact
+		...row,
+		sapaan,
 	};
 
 	let message = getTemplate();
@@ -384,9 +385,6 @@ async function sendWhatAppMessage(row) {
 		const safeValue = value ?? '-';
 		message = message.replace(new RegExp(`{${key}}`, 'g'), safeValue);
 	});
-
-	// console.log(`Mengirim ke ${sapaan} ${nama}`);
-	// console.log('Pesan:', message);
 
 	await sock.presenceSubscribe(jid);
 	await sock.sendPresenceUpdate('composing', jid);
@@ -443,7 +441,25 @@ ipcMain.handle('get-variables', () => {
 });
 
 ipcMain.handle('save-variables', (_, data) => {
-	fs.writeFileSync(variablesPath, JSON.stringify(data, null, 2));
+    const userDataPath = app.getPath('userData');
+    const variablesPath = path.join(userDataPath, 'variables.json');
+
+    try {
+        let currentVars = {};
+        if (fs.existsSync(variablesPath)) {
+            const fileContent = fs.readFileSync(variablesPath, 'utf8');
+            if (fileContent) {
+                currentVars = JSON.parse(fileContent);
+            }
+        }
+        const updatedVars = { ...currentVars, ...data };
+
+        fs.writeFileSync(variablesPath, JSON.stringify(updatedVars, null, 2), 'utf8');
+        return true;
+    } catch (error) {
+        console.error('Gagal menyimpan variabel:', error);
+        return false;
+    }
 });
 
 ipcMain.handle('get-schedule-time', () => {
@@ -480,32 +496,34 @@ function createWindow() {
 ipcMain.on('toggle-connection', async () => {
 	if (!connected) {
 		setReconnect(true);
-		sock = await startSock({ log, setStatus, updateButton });
+
+		await startSock({ log, setStatus, updateButton });
+
 		connected = true;
 		updateButton('Tutup Koneksi');
+		log('Koneksi dimulai.');
 	} else {
 		log('Memutus koneksi dari WhatsApp...');
 
 		setReconnect(false);
 
+		const sock = getSock(); 
+
 		if (sock) {
-			sock.ev.removeAllListeners();
+			try {
 
-			if (sock) {
-				try {
-					sock.end();
-				} catch (e) {
-					log('Error saat end socket: ' + e.message);
-				}
+				sock.ev.removeAllListeners(); 
+				sock.ws.close();
+			} catch (e) {
+				log('Error saat close socket: ' + e.message);
 			}
-
-			sock = null;
 		}
 
 		connected = false;
 		setStatus('terputus');
-		log('Koneksi dihentikan sementara (Sesi tetap aman).');
 		updateButton('Buka Koneksi');
+
+		log('Koneksi dihentikan sementara (Sesi tetap aman).');
 	}
 });
 
