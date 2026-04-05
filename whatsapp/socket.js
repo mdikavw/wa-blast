@@ -19,7 +19,7 @@ const transportTargets = [
     {
         target: 'pino/file',
         options: { destination: logFilePath },
-        level: 'trace',
+        level: 'error',
     },
 ];
 
@@ -29,12 +29,12 @@ if (!app.isPackaged) {
     transportTargets.unshift({
         target: 'pino-pretty',
         options: { colorize: true },
-        level: 'trace',
+        level: 'info',
     });
 }
 
 const logger = P({
-    level: 'trace',
+    level: 'info',
     transport: {
         targets: transportTargets,
     },
