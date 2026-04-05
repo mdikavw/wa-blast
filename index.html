@@ -1,239 +1,205 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<title>WhatsappBlast</title>
-		<link rel="stylesheet" href="./output.css" />
-	</head>
-	<body>
-		<div
-			class="w-full grid grid-cols-12 h-screen bg-primary gap-4 p-4 text-text font-ubuntu overflow-hidden items-start"
-		>
-			<div
-				class="col-span-2 flex flex-col h-full gap-4 max-h-full self-start"
-			>
-				<button
-					onclick="goToVariable()"
-					class="cursor-pointer mt-3 w-fit px-4 py-2 rounded-md border border-secondary bg-accent hover:opacity-90 transition text-sm"
-				>
-					Kelola Variabel
-				</button>
-				<div class="w-full flex flex-col gap-4 pb-8">
-					<span
-						class="text-xl font-bold pb-2 border-b border-secondary"
-					>
-						Data Sistem
-					</span>
+    <head>
+        <title>WhatsappBlast</title>
+        <link rel="stylesheet" href="./output.css" />
+    </head>
+    <body>
+        <div
+            class="w-full grid grid-cols-12 h-screen bg-primary gap-4 p-4 text-text font-ubuntu overflow-hidden items-start"
+        >
+            <div
+                class="col-span-2 flex flex-col h-full gap-4 max-h-full self-start"
+            >
+                <button
+                    onclick="goToVariable()"
+                    class="cursor-pointer mt-3 w-fit px-4 py-2 rounded-md border border-secondary bg-accent hover:opacity-90 transition text-sm"
+                >
+                    Kelola Variabel
+                </button>
+                <div class="w-full flex flex-col gap-4 pb-8">
+                    <span
+                        class="text-xl font-bold pb-2 border-b border-secondary"
+                    >
+                        Data Sistem
+                    </span>
 
-					<div class="flex flex-col gap-3">
-						<span class="text-sm">Data Kontak</span>
-						<input
-							id="file-contacts"
-							type="file"
-							accept=".xlsx"
-							class="hidden"
-						/>
+                    <div class="flex flex-col gap-3">
+                        <span class="text-sm">Data Kontak</span>
+                        <input
+                            id="file-contacts"
+                            type="file"
+                            accept=".xlsx"
+                            class="hidden"
+                        />
 
-						<label
-							for="file-contacts"
-							class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition"
-						>
-							Pilih File Kontak
-						</label>
+                        <label
+                            for="file-contacts"
+                            class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition"
+                        >
+                            Pilih File Kontak
+                        </label>
 
-						<button
-							onclick="goToAturKontak()"
-							class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition"
-						>
-							Kelola Kontak
-						</button>
-					</div>
+                        <button
+                            onclick="goToAturKontak()"
+                            class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition"
+                        >
+                            Kelola Kontak
+                        </button>
+                    </div>
+                </div>
+                <div
+                    class="w-full h-full gap-4 flex flex-col items-center justify-center"
+                >
+                    <div class="w-full flex flex-col gap-4">
+                        <span
+                            class="text-xl font-bold pb-2 border-b border-secondary w-full"
+                            >Kode QR</span
+                        >
+                        <div
+                            id="qr"
+                            class="size-50 flex justify-center w-full"
+                        ></div>
+                    </div>
+                    
+                    <div
+                        class="flex flex-col gap-2 w-full mt-auto pt-2 border-t border-secondary"
+                    >
+                        <div
+                            class="w-fit ps-2 pe-4 flex items-center gap-4 rounded-full py-2 text-center capitalize text-sm border-2 border-secondary border-dashed"
+                        >
+                            <span
+                                id="status-indicator"
+                                class="size-4 rounded-full bg-red-400"
+                            ></span>
+                            <span id="status">Terputus</span>
+                        </div>
+                        
+                        <button
+                            id="cd"
+                            class="py-3 border border-secondary bg-green-400 w-full rounded-md text-center cursor-pointer hover:opacity-90 transition"
+                        >
+                            Buka Koneksi
+                        </button>
 
-					<!-- <div class="flex flex-col gap-3">
-						<span class="text-sm">Data Penstatusan</span>
-						<input
-							id="file-status"
-							type="file"
-							accept=".xlsx"
-							class="hidden"
-						/>
+                        <button
+                            id="logout-btn"
+                            class="py-3 border border-secondary bg-red-500 text-white w-full rounded-md text-center cursor-pointer hover:opacity-90 transition"
+                        >
+                            Logout / Ganti Nomor
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div
+                class="col-span-10 content-start flex flex-col h-full overflow-hidden"
+            >
+                <div class="flex w-full h-fit flex-col pb-4">
+                    <span class="font-bold text-3xl">WhatsappBlast</span>
+                    <span>Penjadwal perpesanan WhatsApp</span>
+                </div>
+                <div
+                    class="grid grid-cols-12 border-s border-t border-secondary h-full"
+                >
+                    <div
+                        class="col-span-9 p-4 h-full flex flex-col overflow-hidden"
+                    >
+                        <div class="flex flex-col gap-2 mb-4">
+                            <span class="text-sm font-bold"
+                                >Input Batch Harian (CSV)</span
+                            >
 
-						<label
-							for="file-status"
-							class="bg-accent py-3 px-4 rounded-md text-center cursor-pointer hover:opacity-90 transition"
-						>
-							Pilih File Penstatusan
-						</label>
-					</div> -->
-				</div>
-				<div
-					class="w-full h-full gap-4 flex flex-col items-center justify-center"
-				>
-					<div class="w-full flex flex-col gap-4">
-						<span
-							class="text-xl font-bold pb-2 border-b border-secondary w-full"
-							>Kode QR</span
-						>
-						<div
-							id="qr"
-							class="size-50 flex justify-center w-full"
-						></div>
-					</div>
-					<div
-						class="flex flex-col gap-2 w-full mt-auto pt-2 border-t border-secondary"
-					>
-						<div
-							class="w-fit ps-2 pe-4 flex items-center gap-4 rounded-full py-2 text-center capitalize text-sm border-2 border-secondary border-dashed"
-						>
-							<span
-								id="status-indicator"
-								class="size-4 rounded-full bg-red-400"
-							></span>
-							<span id="status">Terputus</span>
-						</div>
-						<button
-							id="cd"
-							class="py-3 border border-secondary bg-green-400 w-full rounded-md text-center cursor-pointer"
-						>
-							Buka Koneksi
-						</button>
-					</div>
-				</div>
-			</div>
-			<div
-				class="col-span-10 content-start flex flex-col h-full overflow-hidden"
-			>
-				<div class="flex w-full h-fit flex-col pb-4">
-					<span class="font-bold text-3xl">WhatsappBlast</span>
-					<span>Penjadwal perpesanan WhatsApp</span>
-				</div>
-				<div
-					class="grid grid-cols-12 border-s border-t border-secondary h-full"
-				>
-					<div
-						class="col-span-9 p-4 h-full flex flex-col overflow-hidden"
-					>
-						<div class="flex flex-col gap-2 mb-4">
-							<span class="text-sm font-bold"
-								>Input Batch Harian (CSV)</span
-							>
+                            <textarea
+                                id="csv-input"
+                                class="border border-secondary rounded-md px-3 py-2 bg-transparent h-32"
+                                placeholder="nomor, selisih"
+                            ></textarea>
 
-							<textarea
-								id="csv-input"
-								class="border border-secondary rounded-md px-3 py-2 bg-transparent h-32"
-								placeholder="nomor, selisih"
-							></textarea>
+                            <button
+                                id="save-batch"
+                                class="py-3 bg-accent rounded-md cursor-pointer hover:opacity-90"
+                            >
+                                Simpan Batch Hari Ini
+                            </button>
+                        </div>
+                        <div
+                            class="overflow-y-auto border border-secondary rounded-md min-h-0 h-1/2"
+                        >
+                            <table class="w-full text-sm h-full">
+                                <thead
+                                    class="bg-secondary text-sm font-light sticky top-0"
+                                    id="table-head"
+                                >
+                                    <tr>
+                                        <th class="p-2 text-left">Nama</th>
+                                        <th class="p-2 text-left">Nomor</th>
+                                        <th class="p-2 text-left">Jadwal</th>
+                                        <th class="p-2 text-left">Status</th>
+                                    </tr>
+                                </thead>
 
-							<button
-								id="save-batch"
-								class="py-3 bg-accent rounded-md cursor-pointer hover:opacity-90"
-							>
-								Simpan Batch Hari Ini
-							</button>
-						</div>
-						<div
-							class="overflow-y-auto border border-secondary rounded-md min-h-0 h-1/2"
-						>
-							<table class="w-full text-sm h-full">
-								<thead
-									class="bg-secondary text-sm font-light sticky top-0"
-									id="table-head"
-								>
-									<tr>
-										<th class="p-2 text-left">Nama</th>
-										<th class="p-2 text-left">Nomor</th>
-										<th class="p-2 text-left">Jadwal</th>
-										<th class="p-2 text-left">Status</th>
-									</tr>
-								</thead>
+                                <tbody id="status-table"></tbody>
+                            </table>
+                        </div>
+                        <button
+                            id="start-scheduler"
+                            class="py-2 bg-green-500 rounded-md text-sm cursor-pointer hover:opacity-90"
+                        >
+                            Mulai Penjadwalan
+                        </button>
+                    </div>
+                    <div class="flex flex-col col-span-3 h-full border-s border-secondary">
+                        <div class="flex flex-col border-b border-secondary">
+                            <span class="text-xl font-bold py-2 px-4 w-full">
+                                Pesan WA
+                            </span>
 
-								<tbody id="status-table"></tbody>
-							</table>
-						</div>
-						<button
-							id="start-scheduler"
-							class="py-2 bg-green-500 rounded-md text-sm cursor-pointer hover:opacity-90"
-						>
-							Mulai Penjadwalan
-						</button>
+                            <div class="px-4 pb-3 flex flex-col gap-2">
+                                <textarea 
+                                    id="message-template" 
+                                    class="border border-secondary rounded-md px-3 py-2 bg-transparent text-sm h-24" 
+                                    placeholder="Contoh: Selamat malam {sapaan}, Anda memiliki {selisih}..."
+                                ></textarea>
 
-						<!-- <div class="flex flex-col gap-2 w-full mt-4">
-							<span class="text-sm font-bold"
-								>Test Kirim Pesan</span
-							>
+                                <button 
+                                    id="save-message" 
+                                    class="py-2 bg-accent rounded-md text-sm cursor-pointer hover:opacity-90"
+                                >
+                                    Simpan Pesan
+                                </button>
 
-							<input
-								id="test-number"
-								type="text"
-								placeholder="628xxxxxxxxxx"
-								class="border border-secondary rounded-md px-3 py-2 w-full bg-transparent"
-							/>
+                                <span class="text-xl font-bold py-2 w-full">
+                                    Jam Mulai Pengiriman
+                                </span>
 
-							<input
-								id="test-message"
-								type="text"
-								placeholder="Isi pesan..."
-								class="border border-secondary rounded-md px-3 py-2 w-full bg-transparent"
-							/>
+                                <input 
+                                    type="time" 
+                                    id="schedule-time"
+                                    class="border border-secondary rounded-md px-3 py-2 bg-transparent text-sm"
+                                />
 
-							<button
-								id="send-test"
-								class="py-3 bg-secondary rounded-md w-full cursor-pointer"
-							>
-								Kirim Pesan
-							</button>
-						</div> -->
-					</div>
-					<div class="flex flex-col col-span-3 h-full border-s border-secondary">
-						<div class="flex flex-col border-b border-secondary">
-							<span class="text-xl font-bold py-2 px-4 w-full">
-								Pesan WA
-							</span>
+                                <button 
+                                    id="save-time" 
+                                    class="py-2 bg-accent rounded-md text-sm cursor-pointer hover:opacity-90"
+                                >
+                                    Simpan Jam Pengiriman
+                                </button>
+                            </div>
+                        </div>
 
-							<div class="px-4 pb-3 flex flex-col gap-2">
-								<textarea 
-									id="message-template" 
-									class="border border-secondary rounded-md px-3 py-2 bg-transparent text-sm h-24" 
-									placeholder="Contoh: Selamat malam {sapaan}, Anda memiliki {selisih}..."
-								></textarea>
+                        <span class="text-xl font-bold py-2 px-4 border-b border-secondary w-full">
+                            Log
+                        </span>
 
-								<button 
-									id="save-message" 
-									class="py-2 bg-accent rounded-md text-sm cursor-pointer hover:opacity-90"
-								>
-									Simpan Pesan
-								</button>
-
-								<span class="text-xl font-bold py-2 w-full">
-									Jam Mulai Pengiriman
-								</span>
-
-								<input 
-									type="time" 
-									id="schedule-time"
-									class="border border-secondary rounded-md px-3 py-2 bg-transparent text-sm"
-								/>
-
-								<button 
-									id="save-time" 
-									class="py-2 bg-accent rounded-md text-sm cursor-pointer hover:opacity-90"
-								>
-									Simpan Jam Pengiriman
-								</button>
-							</div>
-						</div>
-
-						<span class="text-xl font-bold py-2 px-4 border-b border-secondary w-full">
-							Log
-						</span>
-
-						<div 
-							id="log-container" 
-							class="flex flex-col py-3 px-4 overflow-auto text-sm space-y-1"
-						></div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</body>
-	<script src="renderer.js"></script>
+                        <div 
+                            id="log-container" 
+                            class="flex flex-col py-3 px-4 overflow-auto text-sm space-y-1"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script src="renderer.js"></script>
 </html>

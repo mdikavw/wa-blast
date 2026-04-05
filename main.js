@@ -1,8 +1,12 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const startSock = require('./whatsapp/socket.js');
+const { useMultiFileAuthState } = require('baileys');
+const { startSock, setReconnect } = require('./whatsapp/socket.js');
 // const XLSX = require('xlsx');
 const fs = require('fs');
+
+const userDataPath = app.getPath('userData'); 
+const authFolder = path.join(userDataPath, 'baileys_auth');
 
 let win;
 let sock;
@@ -516,18 +520,33 @@ function createWindow() {
 }
 
 ipcMain.on('toggle-connection', async () => {
-	if (!connected) {
+    if (!connected) {
+		setReconnect(true);
 		sock = await startSock({ log, setStatus, updateButton });
 		connected = true;
 		updateButton('Tutup Koneksi');
 	} else {
+		log('Memutus koneksi dari WhatsApp...');
+
+		setReconnect(false);
+
 		if (sock) {
-			await sock.logout();
+			sock.ev.removeAllListeners();
+
+			if (sock) {
+				try {
+					sock.end();
+				} catch (e) {
+					log('Error saat end socket: ' + e.message);
+				}
+			}
+
 			sock = null;
 		}
+
 		connected = false;
 		setStatus('terputus');
-		log('Koneksi terputus');
+		log('Koneksi dihentikan sementara (Sesi tetap aman).');
 		updateButton('Buka Koneksi');
 	}
 });
@@ -567,6 +586,32 @@ ipcMain.handle('save-contacts', async (event, data) => {
 		console.error('Gagal menyimpan kontak:', error);
 		return false;
 	}
+});
+
+ipcMain.on('logout-whatsapp', async () => {
+    log('Proses Logout dari WhatsApp diminta...');
+    
+    try {
+        if (sock) {
+            await sock.logout(); 
+            sock = null;
+        } else {
+            const userDataPath = app.getPath('userData');
+            const authFolder = path.join(userDataPath, 'wa_auth_session');
+            
+            if (fs.existsSync(authFolder)) {
+                fs.rmSync(authFolder, { recursive: true, force: true });
+            }
+        }
+
+        connected = false;
+        setStatus('terputus');
+        updateButton('Buka Koneksi');
+        log('Berhasil Logout. Sesi telah dihapus. Silakan Buka Koneksi untuk scan QR baru.');
+        
+    } catch (error) {
+        log('Gagal melakukan logout: ' + error.message);
+    }
 });
 
 app.whenReady().then(() => {

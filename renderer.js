@@ -187,6 +187,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 	const messageInput = document.getElementById('message-template');
 	const saveMessageBtn = document.getElementById('save-message');
 
+	const logoutBtn = document.getElementById('logout-btn');
+    logoutBtn.addEventListener('click', () => {
+        const confirmLogout = confirm('Apakah Anda yakin ingin Logout? Anda harus melakukan scan QR Code ulang setelah ini.');
+        
+        if (confirmLogout) {
+            api.logoutWhatsApp();
+        }
+    });
+
 	if (activeTime) {
         timeInput.value = activeTime;
     }
